@@ -1,0 +1,289 @@
+#include <iostream>
+#include <cstdlib>
+#include <time.h>
+#include <windows.h>
+#include <fstream>
+#include <math.h>
+
+using namespace std;
+clockid_t wholeStartTime;
+void GSATprep(int varAmount, int impAmount, int time);
+int GSAT(int** impBoard, int* varBoard, int varAmount, int impAmount, int time, clock_t timeA);
+int findOne(int* row, int varAmount);
+int countingZeros(int* sums, int impAmount);
+int* countingSums(int** board, int varAmount, int impAmount);
+int** createBoard2D(int rows, int columns);
+void deleteBoard2D(int** board, int rows);
+void writeVar (int** board, int rows, int collumns);
+void variablesOut(int** varBoard,int varAmount);
+
+fstream score;
+int main()
+{
+    score.open("score.txt", ios::out | ios::trunc);
+    int varAmount, impAmount, workTime;
+    srand( time( NULL ) );
+    cout<<"Program is solving satisfiability problem by Greedy SAT algorithm with pseudorandom generated logic formula"<<endl;
+    cout<<"How many variables should formula have? (max 15)"<<endl;
+    cin>> varAmount;
+    cout<<"How many implecents should formula have? (max amount is "<<pow(2,varAmount)<<")"<<endl;
+    cin>>impAmount;
+    cout<<"How much time should program look for solution? [s]"<<endl;
+    cin>>workTime;
+    GSATprep(varAmount, impAmount, workTime);
+    wholeStartTime = clock();
+    system("pause");
+    return 0;
+}
+void variablesOut(int* varBoard,int varAmount)
+{
+    for(int i = 0; i < varAmount; i++)
+    {
+        cout<<"x"<<i<<" = "<< varBoard[i]<<endl;
+        score<<"x"<<i<<" = "<< varBoard[i]<<endl;
+    }
+}
+
+int** createBoard2D(int rows, int columns)
+{
+    int** board = new int* [rows];
+    for(int i = 0; i<rows; i++)
+    {
+        board[i] = new int [columns];
+    }
+    return board;
+}
+void deleteBoard2D(int** board, int rows)
+{
+    for(int i = 0; i<rows;i++)
+    {
+        delete [] board[i];
+    }
+    delete [] board;
+}
+void writeVarAndImp (int** impBoard, int* varBoard, int impAmount, int varAmount)
+{
+    string  text;
+    for(int i = 0; i < impAmount; i++)
+    {
+        int j;
+        text += "(";
+        for(j = 0; j < varAmount; j++)
+        {
+            if(impBoard[i][j] != 2)
+            {
+
+                if(impBoard[i][j] == varBoard[j])
+                {
+                        text += "x"+to_string(j)+"|";
+                }
+                else
+                {
+                        text+="~x"+to_string(j)+"|";
+                }
+            }
+            if(j == varAmount - 1)
+            {
+
+                text[text.length() - 1] = ')';
+                text+=" & ";
+            }
+    }
+    }
+    text[text.length() - 2] = ' ';
+    score<<text<<endl;
+    cout<<text<<endl;
+}
+int* countingSums(int** board, int varAmount, int impAmount)
+{
+    int* sums = new int [impAmount];
+    for(int i = 0; i < impAmount; i++)
+    {
+        sums[i] = 0;
+        for(int j = 0; j < varAmount; j++)
+        {
+            if(board[i][j] == 1)
+            {
+                sums[i]++;
+            }
+        }
+    }
+    return sums;
+}
+int countingZeros(int* sums, int impAmount)
+{
+    int zeros = 0;
+    for(int i = 0; i< impAmount; i++)
+    {
+        if(sums[i] == 0)
+            zeros++;
+    }
+    return zeros;
+}
+int contradictionCheck(int** impBoard, int impAmount, int varAmount)
+{
+    int wsk;
+    for(int i = 0; i < impAmount; i++)
+    {
+        for(int j = i+1; j < impAmount; j++)
+        {
+                for(int k = 0; k < varAmount; k++)
+                {
+                    if(impBoard[i][k] == impBoard[j][k])
+                        wsk = 1;
+                    else
+                    {
+                        wsk = 0;
+                        break;
+                    }
+                }
+                if (wsk == 1)
+                    return 0;
+
+        }
+    }
+    return 1;
+}
+void GSATprep(int varAmount, int impAmount, int time)
+{
+    int* varBoard = new int [varAmount];
+    int** impBoard = createBoard2D(impAmount, varAmount);
+    for(int i = 0; i < varAmount; i++)
+    {
+        varBoard[i] = rand() % 2;
+    }
+    while(true)
+    {
+        for(int i = 0; i < impAmount; i++)
+        {
+            for(int j = 0; j < varAmount; j++)
+            {
+                impBoard[i][j] = rand() % 3;
+            }
+
+        }
+        int* sums = countingSums(impBoard,varAmount, impAmount);
+        int ok1 = countingZeros(sums, impAmount);
+        int ok2 = contradictionCheck(impBoard, impAmount, varAmount);
+        if(ok1 != 0)
+            break;
+        delete [] sums;
+    }
+    cout<<"Variables before solving"<<endl;
+    score<<"Variables before solving"<<endl;
+    variablesOut(varBoard, varAmount);
+    cout<<"Generated formula:"<<endl;
+    writeVarAndImp(impBoard, varBoard, impAmount, varAmount);
+    clock_t timeA = clock();
+    GSAT(impBoard, varBoard, varAmount, impAmount, time, timeA);
+}
+
+int findOne(int* row, int varAmount)
+{
+    int index;
+    for(int i = 0; i < varAmount; i++)
+    {
+        if(row[i] == 1)
+            {
+                index = i;
+                break;
+            }
+    }
+    return index;
+}
+void negation(int** impBoard, int* varBoard, int index, int impAmount)
+{
+    if(varBoard[index] == 0)
+        varBoard[index] = 1;
+    else if(varBoard[index] == 1)
+        varBoard[index] = 0;
+    for(int i  = 0; i < impAmount; i++)
+    {
+        if(impBoard[i][index] == 0)
+            impBoard[i][index] = 1;
+        else if(impBoard[i][index] == 1)
+            impBoard[i][index] = 1;
+    }
+}
+int GSAT(int** impBoard, int* varBoard, int varAmount, int impAmount, int time, clock_t timeA)
+{
+    int maxTime = 30;
+    static int index2;
+    int* sums = countingSums(impBoard, varAmount, impAmount);
+    int* zeroImpChanged = new int[varAmount];
+    for(int i = 0; i < varAmount; i++)
+        zeroImpChanged[i] = 0;
+    int index1 = -1;
+
+    for(int i = 0; i < impAmount; i++)
+    {
+        if(sums[i] == 0)
+        {
+            for(int j = 0; j < varAmount; j++)
+            {
+                if(impBoard[i][j] == 0)
+                {
+                    zeroImpChanged[j]++;
+                }
+            }
+        }
+        if(sums[i] == 1)
+        {
+            for(int j = 0; j < varAmount; j++)
+            {
+                if(impBoard[i][j] == 1)
+                {
+                    zeroImpChanged[j]--;
+                }
+            }
+        }
+    }
+    for(int i = 0; i < varAmount; i++)
+    {
+        if(index1 == -1)
+            index1 = i;
+        else
+        {
+            if(max(zeroImpChanged[i], index1) == zeroImpChanged[i])
+                index1 = i;
+        }
+    }
+    if(index2 != index1)
+    {
+        cout<<"negation of: x"<<index1<<endl;
+        score<<"negation of: x"<<index1<<endl;
+    }
+    else
+    {
+        cout<<"Solution not found. The task has been started again with another values"<<endl;
+        GSATprep(varAmount, impAmount, time);
+    }
+    index2 = index1;
+    negation(impBoard, varBoard, index1, impAmount);
+    clock_t timeB = clock();
+    if((timeB - wholeStartTime)/(double)CLOCKS_PER_SEC > maxTime)
+    {
+        cout<<"The time intended for this task is over, program ends"<<endl;
+        return 0;
+    }
+    if((timeB - timeA)/(double)CLOCKS_PER_SEC > time)
+    {
+        cout<<"The time intended for this task is over, the task has been started again with another values"<<endl;
+        score<<"The time intended for this task is over, the task has been started again with another values"<<endl;
+        GSATprep(varAmount, impAmount, time);
+        return 0;
+    }
+    for(int i = 0; i < impAmount; i++)
+    {
+        if(sums[i] == 0)
+        {
+            GSAT(impBoard, varBoard, varAmount, impAmount, time, timeA);
+            return 0;
+        }
+    }
+    cout<<"Variables after solving"<<endl;
+    score<<"Variables after solving"<<endl;
+    delete [] zeroImpChanged;
+    delete [] sums;
+    variablesOut(varBoard, varAmount);
+}
