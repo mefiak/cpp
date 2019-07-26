@@ -1,0 +1,258 @@
+#include <iostream>
+#include <ctime>
+#include <cstdlib>
+#include <bits/stdc++.h>
+
+
+using namespace std;
+int** create2DBoard(int amount);
+void delete2DBoard(int**board, int amount);
+void preferationAssignment(int** maleBoard, int** femaleBoard, int amount);
+void stableMatching(int** maleBoard, int** femaleBoard, int amount);
+int findIndex(int* board, int amount, int value);
+void stableMatchingMF(int** maleBoard, int** femaleBoard, int amount);
+void solutionsAmount(int** maleBoard, int** femaleBoard, int amount);
+
+int main()
+{
+    int mfAmount;
+    cin >> mfAmount;
+    int** maleBoard, **femaleBoard;
+    maleBoard = create2DBoard(mfAmount);
+    femaleBoard = create2DBoard(mfAmount);
+    srand( time( NULL ) );
+    preferationAssignment(maleBoard, femaleBoard, mfAmount);
+    for(int i = 0; i < mfAmount; i++)
+    {
+        cout<<"male preferences "<<i<<"  ";
+        for(int j = 0; j < mfAmount; j++)
+        {
+            cout<<maleBoard[i][j];
+        }
+        cout<<endl;
+        cout<<"female preferences "<<i<<"  ";
+        for(int j = 0; j < mfAmount; j++)
+        {
+            cout<<femaleBoard[i][j];
+        }
+        cout<<endl;
+    }
+    //stableMatching(maleBoard, femaleBoard, mfAmount);
+    //stableMatchingMF(maleBoard, femaleBoard, mfAmount);
+    solutionsAmount(maleBoard, femaleBoard, mfAmount);
+    delete2DBoard(maleBoard, mfAmount);
+    delete2DBoard(femaleBoard, mfAmount);
+    return 0;
+}
+int** create2DBoard(int amount)
+{
+    int** board = new int* [amount];
+    for(int i = 0; i < amount; i++)
+        board[i] = new int [amount];
+    return board;
+}
+void delete2DBoard(int** board, int amount)
+{
+    for(int i = 0; i < amount; i++)
+    {
+        delete [] board[i];
+    }
+    delete [] board;
+}
+void preferationAssignment(int** maleBoard, int** femaleBoard, int amount)
+{
+    int randomVariable;
+    bool sign = true;
+    for(int i = 0; i < amount; i++)
+    {
+        for(int j = 0; j < amount; j++)
+        {
+            randomVariable = rand() % amount;
+            maleBoard[i][j] = randomVariable;
+            for(int k = 0; k < j; k++)
+            {
+                if(maleBoard[i][k] == randomVariable)
+                {
+                    sign = false;
+                    break;
+                }
+                else
+                    sign = true;
+            }
+            if(sign == false)
+            {
+                j--;
+                continue;
+            }
+        }
+    }
+    for(int i = 0; i < amount; i++)
+    {
+        for(int j = 0; j < amount; j++)
+        {
+            randomVariable = rand() % amount;
+            femaleBoard[i][j] = randomVariable;
+            for(int k = 0; k < j; k++)
+            {
+                if(femaleBoard[i][k] == randomVariable)
+                {
+                    sign = false;
+                    break;
+                }
+                else
+                    sign = true;
+            }
+            if(!sign)
+            {
+                j--;
+                continue;
+            }
+        }
+    }
+}
+
+int findIndex(int* board, int amount, int value)
+{
+    for(int i = 0; i < amount; i++)
+    {
+        if(board[i] == value)
+            return i;
+    }
+}
+void stableMatching(int** maleBoard, int** femaleBoard, int amount)
+{
+    int* maleMarriages = new int [amount], *femaleMarriages = new int [amount], auxiliaryVar =  0;
+    bool* femaleMatched = new bool[amount];
+    int female2Engage;
+    for(int i = 0; i < amount; i++)//every women not matched
+        femaleMatched[i] = false;
+    for(int i = 0; i < amount; i++)
+    {
+        cout<<i<<endl;
+        for(int j = 0; j < amount; j++)
+        {
+            female2Engage = maleBoard[i][j];
+            if(femaleMatched[female2Engage] == false)
+            {
+                femaleMatched[female2Engage] = true;
+                maleMarriages[i] = female2Engage; // male list - male number first
+                femaleMarriages[female2Engage] = i;//female list - female number first
+                break;
+            }
+            else
+            {
+                if(findIndex(femaleBoard[female2Engage], amount, i) >
+                   findIndex(femaleBoard[female2Engage], amount, femaleMarriages[female2Engage]))
+                   // if this one is worse than already accepted
+                    continue;
+                else if(i == femaleMarriages[female2Engage])
+                   break;
+                else
+                {
+                    auxiliaryVar = femaleMarriages[female2Engage];
+                    maleMarriages[i] = female2Engage;
+                    femaleMarriages[female2Engage] = i;
+                    i = auxiliaryVar-1;
+                    break;
+                }
+            }
+        }
+    }
+    for(int i = 0; i < amount; i++)
+    {
+        cout<<"male"<<i<<"   "<<maleMarriages[i]<<endl;
+    }
+    for(int i = 0; i < amount; i++)
+    {
+        cout<<"female"<<i<<"   "<<femaleMarriages[i]<<endl;
+    }
+
+}
+
+void stableMatchingMF(int** maleBoard, int** femaleBoard, int amount)
+{
+    int* maleMarriages = new int [amount],
+    *femaleMarriages = new int [amount],
+    **sums = new int* [amount],
+    minValue = 0,
+    maleIndex, femaleIndex;
+    for(int i = 0; i < amount; i++)
+    {
+        sums[i] = new int [amount];
+    }
+    for(int i = 0; i < amount; i++)
+    {
+        for(int j = 0; j < amount; j++)
+        {
+            sums[i][maleBoard[i][j]] = j+1+
+            findIndex(femaleBoard[maleBoard[i][j]],amount, i)+1;
+        }
+    }
+    for(int i = 0; i < amount; i++)
+    {
+        for(int j = 0; j < amount; j++)
+        {
+             cout<<sums[i][j]<<" ";
+        }
+        cout<<endl;
+    }
+    for(int k = 0; k < amount; k++)
+    {
+        for(int i = 0; i <amount; i++)
+        {
+            for(int j = 0; j < amount; j++)
+            {
+                if(minValue == 0)
+                    minValue = sums[i][j];
+                else
+                {
+                    minValue = min(sums[i][j], minValue);
+                    if(minValue == sums[i][j])
+                    {
+                        maleIndex = i;
+                        femaleIndex = j;
+                    }
+                }
+            }
+        }
+        for(int i =0; i < amount; i++)
+        {
+            sums[maleIndex][i] = 10000;
+        }
+        for(int i = 0; i < amount; i++)
+        {
+            sums[i][femaleIndex] = 10000;
+        }
+
+        maleMarriages[maleIndex] = femaleIndex;
+        minValue = 0;
+    }
+
+
+
+    for(int i = 0; i < amount; i++)
+    {
+        cout<<"male"<<i<<"   "<<maleMarriages[i]<<endl;
+    }
+}
+
+
+void solutionsAmount(int** maleBoard, int** femaleBoard, int amount)
+{
+
+
+    int* boardOfIndex = new int [amount],
+    n = sizeof(boardOfIndex) / sizeof(boardOfIndex[0]);
+    bool* women2engage = new bool [amount];
+    int* maleMarriages = new int [amount];
+    for(int i = 0; i < amount ; i ++)
+    {
+        boardOfIndex[i] = i;
+    }
+    sort(boardOfIndex, boardOfIndex + n);
+    do
+    {
+        for(int i  = 0; i < amount; i++)
+            cout<< boardOfIndex[i]<<endl;
+    }while (next_permutation(boardOfIndex, boardOfIndex + n));
+}
