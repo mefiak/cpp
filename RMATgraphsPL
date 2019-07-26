@@ -1,0 +1,194 @@
+using namespace std;
+fstream dane;
+void usuwanieGrafu(int**graf,int n)
+{
+    for(int i=0;i<n;i++)
+    {
+        delete [] graf[i];
+    }
+}
+void wypisz(int** graf, int n)
+{
+    for(int i=0;i<n;i++)
+    {
+    for(int j=0; j<n;j++)
+    {
+        cout<<graf[i][j];
+        dane<<graf[i][j];
+    }
+    cout<<endl;
+    dane<<endl;
+    }
+}
+int** bazaGrafu(int n)
+{
+    int**graf= new int*[n];
+    for(int i=0;i<n;i++)
+    {
+        graf[i] = new int[n];
+        for(int j=0;j<n;j++)
+        {
+            graf[i][j]=0;
+        }
+    }
+    return graf;
+}
+void zliczanieIlosciKrawedzi (int **tab, int n)
+{
+    float ilKraw=0;
+    for(int i =0;i<n;i++)
+    {
+        for(int j = 0; j<n; j++)
+        {
+            if(tab[i][j]==1 and tab[j][i]==1)
+                {
+                            ilKraw+=0.5; //bo znajdzie ta krawedz 2 razy
+
+                }
+        }
+    }
+    cout<<"Ilosc wierzcholkow: "<<n<<endl<<"ilosc krawedzi: "<<ilKraw<<endl;
+    dane<<"Ilosc wierzcholkow: "<<n<<endl<<"ilosc krawedzi: "<<ilKraw<<endl;
+}
+string losowanie(float a, float b, float c, float d)
+{
+    float los;
+    los = ((rand()%100)+1)*0.01;
+    string trafiony;
+    if(los<=a)
+        trafiony = "a";
+    else if (los<=a+b)
+        trafiony="b";
+    else if(los<=a+b+c)
+        trafiony = "c";
+    else
+        trafiony = "d";
+    return trafiony;
+}
+
+void maxISredniStopien(int** graf, int n)
+{
+    int ilKrawWierzch, maxStop = 0, srStop=0;
+    int* listaStopni = new int [n];
+    for(int i =0;i<n;i++)
+    {
+        ilKrawWierzch = 0;
+        for(int j =0;j<n;j++)
+        {
+            ilKrawWierzch+=graf[i][j];
+        }
+        listaStopni[i]=ilKrawWierzch;
+        if(maxStop<listaStopni[i])
+            maxStop = listaStopni[i];
+        srStop +=listaStopni[i];
+    }
+    srStop/=n;
+    cout<<"Maksymalny stopien wierzcholka:"<<maxStop<<endl<<"Sredni stopien wierzcholka:"<<srStop<<endl;
+    dane<<"Maksymalny stopien wierzcholka:"<<maxStop<<endl<<"Sredni stopien wierzcholka:"<<srStop<<endl;
+    delete [] listaStopni;
+
+}
+int zajetePola(int** graf, int wielkosc)
+{
+    int ilZajetych = 0;
+    for(int i = 0;i<wielkosc;i++)
+    {
+        for(int j = 0; j<wielkosc;j++)
+        {
+            if(graf[i][j]==1)
+                ilZajetych++;
+        }
+    }
+    return ilZajetych;
+}
+void generowanieGrafow(int** graf, int n,float a,float b,float c,float d, float gestosc)
+{
+    srand(time(NULL));
+    int x=0,y=0;
+    int warunek, wczesniejszy=0, szerokosc, wysokosc;
+    float ilZajetych = 0;
+    warunek = ((n * (n - 1)) / 2) * gestosc;
+	while (warunek > wczesniejszy)
+		{
+        szerokosc = n;
+		wysokosc = n;
+		x = 0;
+		y = 0;
+		while (szerokosc > 1)
+		{
+			string los=losowanie(a,b,c,d);
+			if (los =="a")
+			{
+				szerokosc /= 2;
+				wysokosc /= 2;
+			}
+			else if (los=="b")
+			{
+				y += wysokosc / 2;
+				szerokosc /= 2;
+				wysokosc /= 2;
+			}
+			else if (los=="c")
+			{
+				x += szerokosc / 2;
+				szerokosc /= 2;
+				wysokosc /= 2;
+			}
+			else
+			{
+				x += szerokosc / 2;
+				y += wysokosc / 2;
+				szerokosc /= 2;
+				wysokosc /= 2;
+			}
+		}
+		if (graf[x][y] != 1 and x!=y)
+		{
+			graf[x][y] = 1;
+            graf[y][x] = 1;
+			wczesniejszy += 1;
+		}
+    }
+    wypisz(graf,n);
+    zliczanieIlosciKrawedzi(graf, n);
+    maxISredniStopien(graf, n);
+
+}
+int main()
+{
+    cout<<"Program generuje graf, metoda RMAT. Grafy zostana zapisane w postaci macierzy sasiedztwa."<<endl;
+    cout<<"Wygenerowana macierz bedzie o rozmiarze 2^n oraz krawedzie miedzy wierzcholkami zostana wygenerowane pseudolosowa "<<endl<<"z zadanym prawdopodobienstwem"<<endl;
+    cout<<"2^n x 2^n - rozmiar macierzy sasiedztwa"<<endl<<"a,b,c,d - prawdopodobienstwo przypisania jednego z koncow krawedzi w jednej z czterech cwiartek"<<endl;
+    cout<<"-----"<<endl<<"|a|b|"<<endl<<"|---|"<<endl<<"|c|d|"<<endl<<"-----"<<endl;
+    dane.open("dane.txt", ios::out | ios::trunc);
+    while(true)
+    {
+    float n;
+    float a,b,c,d, gestosc;
+    cout<<"n:(n<=6 - ze wzgledu na dlugi czas dzialania)";
+    cin>>n;
+    cout<<"gestosc(z przedzia³u (0,1))";
+    cin>>gestosc;
+    dane<<"Gestosc"<<gestosc<<endl;
+    int ** graf = bazaGrafu(pow(2,n));
+    cout<<"UWAGA: a+b+c+d=1 i a>0 i b>0 i c>0 i d>0"<<endl;
+    cout<<"a";
+    cin>>a;
+    cout<<endl<<"b";
+    cin>>b;
+    cout<<endl<<"c";
+    cin>>c;
+    cout<<endl<<"d";
+    cin>>d;
+    dane<<"a: "<<a<<endl<<"b: "<<b<<endl<<"c: "<<c<<endl<<"d: "<<d<<endl;
+    generowanieGrafow(graf,pow(2,n),a,b,c,d, gestosc);
+    usuwanieGrafu(graf, n);
+    int wyjscievPowtorzenie;
+    cout<<"Zeby powtorzyc dzialanie programu nacisnij 0"<<endl<<"Wciskajac dowolna (nie 0) liczbe program zostanie zakonczony"<<endl;
+    cin>>wyjscievPowtorzenie;
+    if(wyjscievPowtorzenie != 0){ break;}
+    }
+    dane.close();
+    return 0;
+}
+
