@@ -1,0 +1,176 @@
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+using namespace std;
+fstream fileTxt,fileBin;
+int** counting(int& ,string);
+string* hoffmanAlphabet(int** abc, int amount, string txt);
+string hoffmanCoding(string* alphabet, int amount, string txt, int** abc);
+void hoffmanDecoding(string* alphabet, int amount, string codedTxt, int** abc);
+main()
+{
+    cout<<"Hoffman Coding"<<endl<<
+    "Program as an input takes a file called file.txt where text is located and as an output gives file cold fileBin.txt where coded text will be placed afted use of program"<<endl;
+    int** abcBoard;
+    int amount;
+    fileBin.open("fileBin.txt", ios::in| ios::out );
+    ifstream fileTxt { "file.txt" };
+    string text { istreambuf_iterator<char>(fileTxt), istreambuf_iterator<char>() };
+    cout<<"Text loaded from file: " << endl << text<<endl;
+    abcBoard = counting(amount, text);
+    cout<<"Frequency: "<<endl;
+    for(int i = 0; i < amount; i++)
+        if(abcBoard[i][0] == 10)
+            cout<<"(Enter)"<<" - "<< abcBoard[i][1]<<endl;
+        else if(abcBoard[i][0] == 32)
+            cout<<"(Space)"<<" - "<< abcBoard[i][1]<<endl;
+        else
+            cout<<(char)abcBoard[i][0]<<"       - "<< abcBoard[i][1]<<endl;
+    string* alphabet = hoffmanAlphabet(abcBoard, amount, text);
+    cout<<"Codes assigned to characters: " << endl;
+    for(int i = 0; i < amount; i++)
+    {
+        if(abcBoard[i][0] == 10)
+            cout<<i<<"   "<<"(Enter)"<<"  "<<alphabet[i]<<endl;
+        else if (abcBoard[i][0] == 32)
+            cout<<i<<"   "<<"(Space)"<<"  "<<alphabet[i]<<endl;
+        else
+        {
+            if(i<10)
+                cout<<i<<"   "<< (char)abcBoard[i][0]<<"        "<<alphabet[i]<<endl;
+            else
+                cout<<i<<"  "<< (char)abcBoard[i][0]<<"        "<<alphabet[i]<<endl;
+
+        }
+    }
+    cout<<"coded text: "<<endl;
+    string codedTxt = hoffmanCoding(alphabet, amount, text, abcBoard);
+    cout<<"Decoded text: "<<endl;
+    hoffmanDecoding(alphabet, amount,  codedTxt, abcBoard);
+    for(int i = 0; i < amount; i++)
+        delete [] abcBoard[i];
+
+        delete [] alphabet;
+
+    fileTxt.close();
+    fileBin.close();
+    getchar();
+    return 0;
+}
+int** counting (int &amount,string text)
+{
+    int** sortedCharBoard;
+    int charBoard[123]{};
+    int charsAmount = 0, sortingVariable = 0;
+    for(unsigned int i = 0; i < text.length(); i++)
+    {
+        charBoard[text[i]]++;//zwiekszanie wartosci pod indeksem dla kodu ascii danej litery
+    }
+    for(int i = 0; i < 123; i++)//counting differenet chars in text
+    {
+        if(charBoard[i])
+            charsAmount++;
+    }
+    sortedCharBoard = new int*[charsAmount];//Output board
+    for(int i = 0; i<charsAmount; i++)
+        sortedCharBoard[i] = new int [2];
+    for(int i = 0; i<123; i++)//searching for char with the biggest amount of appears
+    {
+        sortingVariable = max(charBoard[i], sortingVariable);
+    }
+    int k = 0;//iterator for output board
+    for(int j = sortingVariable; j>0; j--)
+    {
+        for(int i = 0; i<123; i++)
+        {
+            if(charBoard[i]==j)
+            {
+                sortedCharBoard[k][0]=i;
+                sortedCharBoard[k][1]=j;
+                k++;
+            }
+        }
+    }
+    amount = charsAmount;
+    return sortedCharBoard;
+}
+string* hoffmanAlphabet(int** abc, int amount, string txt)
+{
+    int n = 0;
+    string* alphabet = new string[amount];
+    for(int i = 0; i<amount; i++)
+    {
+        if(i == 0)
+        {
+            alphabet[i] = "0";
+        }
+        else
+        {
+            if((i+1)%2 == 0 )//amount of 1 at the start of binary word
+                n++;
+            for(int j=0; j<n; j++)
+            {
+                alphabet[i]+="1";
+            }
+            if(alphabet[i].length()+2 == alphabet[i-1].length() and //length of binary word
+               alphabet[i-1][alphabet[i-1].length()-1] == '0' and alphabet[i-1][alphabet[i-1].length()-2] == '0')
+            {
+                alphabet[i]+="01";
+            }
+           else
+            {
+                alphabet[i]+="00";
+            }
+
+        }
+    }
+    return alphabet;
+}
+string hoffmanCoding(string* alphabet, int amount, string txt, int** abc)
+{
+    string codedTxt;
+    for(unsigned int i = 0; i < txt.length();i++)
+    {
+        for(int j =0; j < amount; j++)
+        {
+            if((char)txt[i] == (char)abc[j][0])
+            {
+                codedTxt+=alphabet[j];
+            }
+        }
+    }
+    cout<<codedTxt<<endl;
+    fileBin<<codedTxt;
+    return codedTxt;
+}
+void hoffmanDecoding(string* alphabet, int amount, string codedTxt, int** abc)
+{
+    string decodedTxt = "";
+    unsigned int index = 0;
+    while(index+1 != codedTxt.length())
+    {
+        string  binaryWord;
+        if(index!=0)
+            index++;
+        int wordStart = index;
+        while(codedTxt[index] != '0')
+        {
+            index++;
+        }
+        if(index!=0 and index-wordStart!=0)
+            index++;
+        for(unsigned int i = wordStart; i <= index; i++)
+        {
+            binaryWord += codedTxt[i];
+        }
+        for(int j = 0; j<amount; j++)
+        {
+            if (binaryWord == alphabet[j])
+            {
+                decodedTxt += (char)abc[j][0];
+                break;
+            }
+        }
+    }
+    cout<<decodedTxt<<endl;
+}
