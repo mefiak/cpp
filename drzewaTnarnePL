@@ -1,0 +1,190 @@
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+using namespace std;
+int i=0;
+fstream dane;
+void wypisz (int wielk, int* tab)
+{
+    i++;
+    if(i<10)
+    {
+        cout<<i<<"     ";
+        dane<<i<<"     ";
+    }
+    else if(i>=10 and i<100)
+    {
+        cout<<i<<"    ";
+        dane<<i<<"    ";
+    }
+    else
+    {
+        cout<<i<<"   ";
+        dane<<i<<"   ";
+    }
+    for(int i=0; i<wielk; i++)
+    {
+    if(tab[i]==1)
+    {
+        if(i<10)
+        {
+            cout<<i<<"   ";
+            dane<<i<<"   ";
+        }
+        else if(i>9 and i<100)
+        {
+            cout<<i<<"  ";
+            dane<<i<<"  ";
+        }
+        else
+        {
+         cout<<i<<" ";
+         dane<<i<<" ";
+        }
+    }
+    }
+    cout<<"    ";
+    for(int i=0; i<wielk; i++)
+    {
+        cout<<tab[i];
+        dane<<tab[i];
+    }
+    cout<<endl;
+    dane<<endl;
+
+}
+int znajdz1Index(int n, int* tab, int wielkoscTab)//n - jedynka ktorej szukam
+{
+    int i=0;
+    int suma=0;
+    while(suma!=n)
+    {
+        suma+=tab[i];
+        i++;
+    }
+    i--;
+    return i;
+}
+int* stworzTablice(int t, int n)//n - ilosc 1
+{
+    int wielkosc=n*t;
+    int* tab = new int [wielkosc];
+    for(int i=0;i<wielkosc;i++)
+    {
+        if(i<n)
+            tab[i]=1;
+        else
+            tab[i]=0;
+    }
+    return tab;
+
+}
+void zamien(int &a, int& b)
+{
+    int c=a;
+    a=b;
+    b=c;
+}
+int przesuwanie12(int n, int t,int stalT, int *tab, int wielk)
+{
+    int suma= 0;
+    while(tab[wielk-t]!=1 or suma!=wielk/stalT-n)
+    {
+        suma = 0;
+        int i=znajdz1Index(n, tab, wielk);
+        zamien(tab[i],tab[i+1]);
+        wypisz(wielk, tab);
+        for(int a = znajdz1Index(n,tab,wielk)+1; a<wielk  ;a++)
+        suma+=tab[a];
+    }
+
+
+    return 0;
+}
+int przesuwanie1(int n, int t,int stalT, int *tab, int wielk)// stalT - t uzyte do nastepnych rekurencji - niezmienione
+{
+    int suma=0;
+    if(n==2)
+        return 0;
+    while(tab[wielk-t]!=1 or suma!=wielk/stalT-n)
+    {
+        int i=znajdz1Index(n, tab, wielk);
+        zamien(tab[i],tab[i+1]);
+        for(int a = n+1; a<=wielk/stalT;a++)
+            zamien(tab[znajdz1Index(a,tab,wielk)],tab[znajdz1Index(a-1,tab,wielk)+1]);
+        wypisz(wielk, tab);
+        if(n!=wielk/stalT)
+        {
+            for(int a = wielk/stalT; a>n;a--)
+            {
+                przesuwanie12(a,t-stalT*(wielk/stalT-n),stalT,tab,wielk);
+            }
+
+        }
+
+        suma=0;
+        for(int a = znajdz1Index(n,tab,wielk)+1; a<wielk  ;a++)
+            suma+=tab[a];
+            //string d; cin>>d;
+    }
+    if(n==wielk/stalT and n>3)
+                zamien(tab[znajdz1Index(n,tab,wielk)],tab[znajdz1Index(n-1,tab,wielk)+2]);
+    przesuwanie1(n-1,t+stalT,stalT,tab,wielk);
+}
+
+int przesuwanieCale(int n, int t,int*tab, int wielk)
+{
+    cout<<"Nr       "<<"T                      "<<"X"<<endl;
+    wypisz(wielk,tab);
+
+    for(int i=1;i<=t;i++)//okres punktow wychodzacych z 1 wierzcholka
+    {
+
+        przesuwanie1(n, t,t, tab, wielk);//przesuwanie 1 dla kolejnych wierzcholkow
+        for(int j=i+2,k=0,p=0;p<n-2;p++,k+=t,j++)
+            zamien(tab[j],tab[wielk-t-k]);
+        zamien(tab[i],tab[i+1]);
+        if(tab[t+1]==1 and tab[t]==0 and i==t )
+            break;
+        wypisz(wielk, tab);
+    }
+    cout<<"Wygenerowano "<<i<<"ukladow drzew"<<endl;
+    return 0;
+}
+
+void generowanieDrzew(int n, int t)
+{
+    int wielk=n*t;
+    int* tab=stworzTablice(t,n);
+    przesuwanieCale(n,t,tab,wielk);
+    delete [] tab;
+
+}
+int main()
+{
+    dane.open("dane.txt", ios::out | ios::trunc);
+    while(true)
+    {
+    int n, t, decyzja;
+    cout<<"Program generuje drzewa t-narne o n wierzcholkach wewnetrznych"<<endl;
+    cout<<"Aby program zaczal generowac drzewa podaj 2 wartosci:"<<endl;
+    cout<<"Wpisz liczbe galezi wychodzacych z kazdego wierzcholka(liczba naturalna rozna od 0)"<<endl;
+    dane<<"Program generuje drzewa t-narne o n wierzcholkach wewnetrznych"<<endl;
+    dane<<"Aby program zaczal generowac drzewa podaj 2 wartosci:"<<endl;
+    cin>>t;
+    cout<<"Wpisz liczbe wierzcholkow wewnetrznych (liczba naturalna rozna od 0)"<<endl;
+    cin>>n;
+    generowanieDrzew(n,t);
+    cout<<"Czy chcesz zaczac od poczatku? (0 - tak, 1 - nie)"<<endl;
+    cin>>decyzja;
+    if (decyzja == 0)
+    {
+        continue;
+        i=0;
+    }
+    else
+        break;
+    }
+    dane.close();
+    return 0;
+}
